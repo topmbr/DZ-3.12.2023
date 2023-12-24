@@ -6,7 +6,7 @@ namespace ConsoleApp102
     internal class Program
     {
         static string connectionString = @"Data Source = DESKTOP-2J3MN6S; Initial Catalog = NewsletterList; Trusted_Connection=True; TrustServerCertificate= True";
-        static void Main()
+        static async Task Main()
         {
 
             if (ConnectToDatabase())
@@ -29,6 +29,22 @@ namespace ConsoleApp102
             else
             {
                 Console.WriteLine("Помилка підключення до бази даних.\n");
+            }
+        }
+        static async Task<bool> ConnectToDatabaseAsync()
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка підключення: {ex.Message}");
+                return false;
             }
         }
         static bool ConnectToDatabase()
@@ -383,5 +399,84 @@ namespace ConsoleApp102
             }
 
         }
+
+        static void DisplayCustomersCountByCity()
+        {
+            string query = "SELECT City, COUNT(*) AS CustomerCount FROM Customers GROUP BY City";
+
+            DisplayResult("Кількість покупців у кожному місті:", query);
+        }
+
+        static void DisplayCustomersCountByCountry()
+        {
+            string query = "SELECT Country, COUNT(*) AS CustomerCount FROM Customers GROUP BY Country";
+
+            DisplayResult("Кількість покупців у кожній країні:", query);
+        }
+
+        static void DisplayCitiesCountByCountry()
+        {
+            string query = "SELECT Country, COUNT(DISTINCT City) AS CityCount FROM Customers GROUP BY Country";
+
+            DisplayResult("Кількість міст у кожній країні:", query);
+        }
+
+        static void DisplayAverageCitiesPerCountry()
+        {
+            string query = "SELECT AVG(CityCount) FROM (SELECT Country, COUNT(DISTINCT City) AS CityCount FROM Customers GROUP BY Country) AS CityCounts";
+
+            DisplayResult("Середня кількість міст по всіх країнах:", query);
+        }
+
+
+        static void DisplaySectionsByCustomerAndCountry(int customerID, string country)
+        {
+            string query = $"SELECT DISTINCT Section FROM Interests WHERE CustomerID = {customerID} AND Section IN (SELECT Section FROM Promotions WHERE Country = '{country}')";
+
+            DisplayResult($"Розділи для покупця з ID {customerID} у країні {country}:", query);
+        }
+
+        static void DisplayPromotionsBySectionAndTimePeriod(string section, DateTime startDate, DateTime endDate)
+        {
+            string query = $"SELECT * FROM Promotions WHERE Section = '{section}' AND StartDate >= '{startDate:yyyy-MM-dd}' AND EndDate <= '{endDate:yyyy-MM-dd}'";
+
+            DisplayResult($"Акційні товари для розділу {section} за період з {startDate:yyyy-MM-dd} по {endDate:yyyy-MM-dd}:", query);
+        }
+
+        static void DisplayPromotionsByCustomer(int customerID)
+        {
+            string query = $"SELECT * FROM Promotions WHERE Section IN (SELECT Section FROM Interests WHERE CustomerID = {customerID})";
+
+            DisplayResult($"Акційні товари для покупця з ID {customerID}:", query);
+        }
+
+        static void DisplayTop3CountriesByCustomersCount()
+        {
+            string query = "SELECT TOP 3 Country, COUNT(*) AS CustomerCount FROM Customers GROUP BY Country ORDER BY CustomerCount DESC";
+
+            DisplayResult("Топ-3 країни за кількістю покупців:", query);
+        }
+
+        static void DisplayBestCountryByCustomersCount()
+        {
+            string query = "SELECT TOP 1 Country, COUNT(*) AS CustomerCount FROM Customers GROUP BY Country ORDER BY CustomerCount DESC";
+
+            DisplayResult("Найкраща країна за кількістю покупців:", query);
+        }
+
+        static void DisplayTop3CitiesByCustomersCount()
+        {
+            string query = "SELECT TOP 3 City, COUNT(*) AS CustomerCount FROM Customers GROUP BY City ORDER BY CustomerCount DESC";
+
+            DisplayResult("Топ-3 міста за кількістю покупців:", query);
+        }
+
+        static void DisplayBestCityByCustomersCount()
+        {
+            string query = "SELECT TOP 1 City, COUNT(*) AS CustomerCount FROM Customers GROUP BY City ORDER BY CustomerCount DESC";
+
+            DisplayResult("Найкраще місто за кількістю покупців:", query);
+        }
+
     }
 }
